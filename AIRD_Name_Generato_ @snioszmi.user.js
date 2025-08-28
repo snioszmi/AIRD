@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         AIRD Name Generator @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.0
 // @description  Generuje nazwy eksperymentów dla AIRD
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update/*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
+// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/keyword-management/create*
 // @author       Michał Śnioszek
 // @grant        none
 // ==/UserScript==
@@ -13,13 +14,12 @@
     'use strict';
 
     function getWeekNumber() {
-        const now = new Date();
-        const start = new Date(now.getFullYear(), 0, 1);
-        const diff = now - start;
-        const oneWeek = 1000 * 60 * 60 * 24 * 7;
-        const weekNumber = Math.floor(diff / oneWeek);
-        return ('0' + (weekNumber + 1)).slice(-2);
-    }
+    const now = new Date();
+    const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+    const pastDaysOfYear = (now - firstDayOfYear) / 86400000;
+    const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    return ('0' + weekNumber).slice(-2);
+}
 
     function getMonthName() {
         const months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -52,28 +52,32 @@
                     case 'PDS':
                         select.value = 'PDS';
                         break;
+                    case 'Parity':
+                        select.value = 'COVERAGE_EXTENSION';
+                        break;
                     default:
                         select.value = 'EXP_TEAM';
                         break;
+
                 }
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
     }
 
-    const container = document.createElement('div');
-    container.style.cssText = `
-        position: absolute;
-        right: 150px;
-        top: 220px;
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        padding: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        width: 250px;
-        z-index: 9999;
-    `;
+const container = document.createElement('div');
+container.style.cssText = `
+    position: absolute;
+    right: 15px;
+    top: 100px;        // Ta wartość ustawi go w górnej części
+    background-color: #ffc107;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    width: 300px;
+    z-index: 9999;
+`;
 
     const typeSelect = document.createElement('select');
     typeSelect.style.cssText = `
@@ -97,20 +101,21 @@
         updateKeywordSource(event.target.value);
     });
 
-    const monthDisplay = document.createElement('div');
-    monthDisplay.textContent = getMonthName();
-    monthDisplay.style.cssText = `
-        background-color: #fff;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        margin-bottom: 10px;
-        text-align: center;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 12px;
-        color: #666;
-    `;
+  const monthDisplay = document.createElement('div');
+monthDisplay.textContent = getMonthName();
+monthDisplay.style.cssText = `
+    background-color: #f0f0f0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
+    color: #000;
+    font-weight: bold;
+`;
 
     function updateMarketplace(newMP) {
         const marketplaceSelects = document.querySelectorAll('select');
@@ -134,31 +139,47 @@
  let selectedMP = 'PL';
 
     function generateName() {
-        if (!selectedMP) {
-            alert('Please select a marketplace!');
-            return;
-        }
-
-        const type = typeSelect.value;
-        const month = getMonthName();
-        const week = 'Wk' + getWeekNumber();
-        const rulename = rulenameInput.value.trim();
-
-        if (!rulename) {
-            alert('Please enter a rulename!');
-            return;
-        }
-
-        const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_SP`;
-        previewDiv.textContent = generatedName;
-
-        const experimentNameInput = document.querySelector('input[type="text"]');
-        if (experimentNameInput) {
-            experimentNameInput.value = generatedName;
-            const event = new Event('input', { bubbles: true });
-            experimentNameInput.dispatchEvent(event);
-        }
+    if (!selectedMP) {
+        alert('Please select a marketplace!');
+        return;
     }
+
+    const type = typeSelect.value;
+    const month = getMonthName();
+    const week = 'Wk' + getWeekNumber();
+    const rulename = rulenameInput.value.trim();
+
+    if (!rulename) {
+        alert('Please enter a rule name!');
+        return;
+    }
+
+    const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_SP`;
+    previewDiv.textContent = generatedName;
+
+    // Kopiowanie do schowka
+    navigator.clipboard.writeText(generatedName);
+
+    // Zmiana tekstu i koloru przycisku
+    generateButton.textContent = 'Copied to clipboard!';
+    generateButton.style.backgroundColor = '#2e7d32'; // ciemny zielony
+    generateButton.style.borderColor = '#1b5e20'; // jeszcze ciemniejszy zielony dla bordera
+
+    // Przywrócenie oryginalnego wyglądu po 2 sekundach
+    setTimeout(() => {
+        generateButton.textContent = 'Generate Name';
+        generateButton.style.backgroundColor = '#fdda5e';
+        generateButton.style.borderColor = '#ffc107';
+    }, 2000);
+
+ //   const experimentNameInput = document.querySelector('input[type="text"]');
+  //  if (experimentNameInput) {
+  //      experimentNameInput.value = generatedName;
+   //     const event = new Event('input', { bubbles: true });
+   //     experimentNameInput.dispatchEvent(event);
+   // }
+}
+
 
     const marketplaces = ['BR', 'NL', 'SE', 'PL', 'TR', 'SA', 'EG'];
     marketplaces.forEach(mp => {
@@ -215,29 +236,30 @@
         mpButtonsContainer.appendChild(button);
     });
 
-    const weekDisplay = document.createElement('div');
-    weekDisplay.textContent = 'Wk' + getWeekNumber();
-    weekDisplay.style.cssText = `
-        background-color: #fff;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        margin-bottom: 10px;
-        text-align: center;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 12px;
-        color: #666;
-    `;
+const weekDisplay = document.createElement('div');
+weekDisplay.textContent = 'Wk' + getWeekNumber();
+weekDisplay.style.cssText = `
+    background-color: #f0f0f0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
+    color: #000;
+    font-weight: bold;
+`;
 
     const rulenameInput = document.createElement('input');
     rulenameInput.type = 'text';
-    rulenameInput.placeholder = 'Enter rulename';
+    rulenameInput.placeholder = 'Enter rule name';
     rulenameInput.style.cssText = `
         padding: 5px;
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid #ccc;
+        border: 1px solid #000000;
         border-radius: 3px;
         margin-bottom: 10px;
     `;
@@ -262,7 +284,7 @@
         padding: 5px;
         border: 1px solid #ddd;
         border-radius: 3px;
-        background-color: #fff;
+        background-color: #f0f0f0;
         min-height: 20px;
         word-break: break-all;
         width: 100%;
