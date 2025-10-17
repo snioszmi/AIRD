@@ -39,7 +39,7 @@
         floatingContainer.style.cssText = `
             position: absolute;
             right: 15px;
-            top: 600px;
+            top: 670px;
             background-color: #fff;
             border: 1px solid #ddd;
             border-radius: 5px;
