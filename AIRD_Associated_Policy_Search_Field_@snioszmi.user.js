@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD Associated Policy Search Field @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Wyszukuje podobne słowa w polu wyboru Associated Policy na stronie Content Risk Engine
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update/*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
