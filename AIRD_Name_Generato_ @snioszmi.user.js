@@ -46,18 +46,24 @@
             const label = select.previousElementSibling;
             if (label && label.textContent === 'Keyword Source') {
                 switch(selectedType) {
-                    case 'DAV1K':
-                        select.value = 'IMPRESSION_AUDITS';
-                        break;
-                    case 'PDS':
-                        select.value = 'PDS';
-                        break;
-                    case 'Parity':
-                        select.value = 'COVERAGE_EXTENSION';
-                        break;
-                    default:
-                        select.value = 'EXP_TEAM';
-                        break;
+                case 'DAV1K':
+                    select.value = 'IMPRESSION_AUDITS';
+                    break;
+                case 'PDS':
+                    select.value = 'PDS';
+                    break;
+                case 'Parity':
+                    select.value = 'COVERAGE_EXTENSION';
+                    break;
+                case 'CriticalEvent':
+                    select.value = 'CEP';
+                    break;
+                case 'DART':
+                    select.value = 'DART';
+                    break;
+                default:
+                    select.value = 'EXP_TEAM';
+                    break;
 
                 }
                 select.dispatchEvent(new Event('change', { bubbles: true }));
