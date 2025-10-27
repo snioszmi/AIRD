@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Tworzy checkboxy z opcjami Ad Components
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
@@ -15,13 +15,14 @@
 
     const programMappings = {
         'SP': {
-            'Product Title': 'asinAssetsProductTitle',
-            'OCR Text': 'imageText',
-            'Browse Nodes': 'asinAssetsBrowseNodes',
+            
             'Product Description': 'asinAssetsProductDescription',
             'Feature Bullets': 'asinAssetsFeatureBullets',
             'ASIN Brand': 'asinAssetsBrand',
-            'GL': 'asinAssetsGLProductGroupType'
+            'GL': 'asinAssetsGLProductGroupType',
+            'Browse Nodes': 'asinAssetsBrowseNodes',
+            'OCR Text': 'imageText',
+            'Product Title': 'asinAssetsProductTitle'
             
         },
         'SB': {
