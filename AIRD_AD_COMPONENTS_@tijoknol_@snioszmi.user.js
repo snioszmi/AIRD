@@ -26,10 +26,10 @@
             
         },
         'SB': {
-            'Custom Headline': 'textAssets$customHeadline',
-            'OCR Text': 'imageText',
             'Product Title': 'asinAssetsProductTitle',
+            'OCR Text': 'imageText',
             'Product Description': 'asinAssetsProductDescription',
+            'Custom Headline': 'textAssets$customHeadline',
             'Feature Bullets': 'asinAssetsFeatureBullets',
             'Brand': 'asinAssetsBrand',
             'Browse Nodes': 'asinAssetsBrowseNodes',
