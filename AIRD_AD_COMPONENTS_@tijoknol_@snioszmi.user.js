@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.2
 // @description  Tworzy checkboxy z opcjami Ad Components
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
@@ -13,30 +13,96 @@
 (function() {
     'use strict';
 
-    const options = [
-        'asinAssetsProductTitle',
-        'imageText',
-        'asinAssetsProductDescription',
-        'asinAssetsFeatureBullets',
-        'asinAssetsBrowseNodes',
-        'asinAssetsBrand',
-        'asinAssetsGLProductGroupType'
-    ];
-
-    // Create outer container (biały)
+    const programMappings = {
+        'SP': {
+            'Product Title': 'asinAssetsProductTitle',
+            'OCR Text': 'imageText',
+            'Browse Nodes': 'asinAssetsBrowseNodes',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'ASIN Brand': 'asinAssetsBrand',
+            'GL': 'asinAssetsGLProductGroupType'
+            
+        },
+        'SB': {
+            'Custom Headline': 'textAssets$customHeadline',
+            'OCR Text': 'imageText',
+            'Product Title': 'asinAssetsProductTitle',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'Brand': 'asinAssetsBrand',
+            'Browse Nodes': 'asinAssetsBrowseNodes',
+            'Landing Page Asin Title': 'landingPageAsinProductTitle',
+            'Landing Page Asin Description': 'landingPageAsinProductDescription',
+            'Landing Page Asin Browse Nodes': 'landingPageAsinBrowseNodes',
+            'Landing Page Asin Brands': 'landingPageAsinBrands'
+        },
+        
+       
+        'AD POST': {
+            'Product Title': 'asinAssetsProductTitle',
+            'OCR Text': 'imageText',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'Brand': 'asinAssetsBrand',
+            'Caption': 'textAssets$caption'
+            
+        },
+        'STORES': {
+            'Product Title': 'asinAssetsProductTitle',
+            'OCR Text': 'imageText',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'Brand': 'asinAssetsBrand',
+            'All Text': 'textAssets',
+            'Browse Nodes': 'asinAssetsBrowseNodes'
+        },
+        'BOOKS': {
+            'Book Title': 'bookTitle',
+            'AuthorNames': 'asinAssetsAuthorNames',
+            'OCR Text': 'imageText',
+            'Custom Headline': 'textAssets$customHeadline', 
+            'Product Title': 'asinAssetsProductTitle',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'ASIN Brand': 'asinAssetsBrand',
+            'Browse Nodes': 'asinAssetsBrowseNodes',
+            'Landing Page Asin Title': 'landingPageAsinProductTitle',
+            'Landing Page Asin Description': 'landingPageAsinProductDescription',
+            'Landing Page Asin Browse Nodes': 'landingPageAsinBrowseNodes',
+            'Landing Page Asin Brands': 'landingPageAsinBrands',
+            'All Text': 'textAssets'
+        },
+  
+    
+        'SBV': {
+            'Product Title': 'asinAssetsProductTitle',
+            'Product Description': 'asinAssetsProductDescription',
+            'Feature Bullets': 'asinAssetsFeatureBullets',
+            'Brand': 'asinAssetsBrand',
+            'All Text': 'textAssets',
+            'Browse Nodes': 'asinAssetsBrowseNodes'
+        }
+    };
+ // Create outer container (biały)
     const outerContainer = document.createElement('div');
-    outerContainer.style.position = 'fixed';
-    outerContainer.style.bottom = '10px';
-    outerContainer.style.left = '10px';
-    outerContainer.style.padding = '10px';
-    outerContainer.style.backgroundColor = '#fff';
-    outerContainer.style.border = '1px solid #ddd';
-    outerContainer.style.borderRadius = '5px';
-    outerContainer.style.zIndex = '9999';
+    outerContainer.style.cssText = `
+        position: fixed;
+        bottom: 60px;
+        left: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        z-index: 9999;
+        width: 280px;
+        box-sizing: border-box;
+        height: 500px;  // Stała wysokość całego kontenera
+    `;
 
     // Add title
     const title = document.createElement('div');
-    title.textContent = 'Ad components:';
+    title.textContent = 'Ad Program:';
     title.style.cssText = `
         font-size: 14px;
         font-weight: bold;
@@ -44,64 +110,200 @@
         margin-bottom: 10px;
         padding-bottom: 5px;
         border-bottom: 1px solid #ddd;
+        height: 25px;
+        box-sizing: border-box;
     `;
     outerContainer.appendChild(title);
 
-    // Create inner container (szary) dla checkboxów
-    const checkboxContainer = document.createElement('div');
-    checkboxContainer.style.backgroundColor = '#f0f0f0';
-    checkboxContainer.style.padding = '10px';
-    checkboxContainer.style.borderRadius = '3px';
-    checkboxContainer.style.marginBottom = '10px';
-    checkboxContainer.style.border = '1px solid #ddd';
+    // Program selector container
+    const programSelector = document.createElement('div');
+    programSelector.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        margin-bottom: 20px;
+        background-color: #f0f0f0;
+        padding: 5px;
+        border-radius: 3px;
+        border: 1px solid #ddd;
+        height: 130px;
+        box-sizing: border-box;
+    `;
 
-    // Create checkboxes
-    options.forEach(option => {
-        const div = document.createElement('div');
-        div.style.marginBottom = '8px';
+    let currentProgram = 'SP';
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = option;
-        checkbox.value = option;
-        checkbox.style.width = '20px';
-        checkbox.style.height = '20px';
-        checkbox.style.cursor = 'pointer';
-        checkbox.style.accentColor = '#ffc107';
+    // Tworzenie pill buttons dla programów
+    Object.keys(programMappings).forEach(program => {
+        const button = document.createElement('button');
+        button.textContent = program;
+        button.style.cssText = `
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: ${program === 'SP' ? '#fdda5e' : '#fff'};
+            border-color: ${program === 'SP' ? '#ffc107' : '#ccc'};
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+        `;
 
-        const label = document.createElement('label');
-        label.htmlFor = option;
-        label.textContent = option;
-        label.style.marginLeft = '8px';
-        label.style.cursor = 'pointer';
-        label.style.fontSize = '14px';
-        label.style.verticalAlign = 'middle';
+        button.addEventListener('click', () => {
+            // Reset all buttons
+            programSelector.querySelectorAll('button').forEach(btn => {
+                btn.style.backgroundColor = '#fff';
+                btn.style.borderColor = '#ccc';
+            });
 
-        div.appendChild(checkbox);
-        div.appendChild(label);
-        checkboxContainer.appendChild(div);
+            // Highlight selected button
+            button.style.backgroundColor = '#fdda5e';
+            button.style.borderColor = '#ffc107';
+
+            currentProgram = program;
+            updateCheckboxes(program);
+        });
+
+        programSelector.appendChild(button);
     });
 
-    // Dodajemy szary kontener do białego
+    outerContainer.appendChild(programSelector);
+ // Create checkbox container
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.style.cssText = `
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 3px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        height: 300px;
+        box-sizing: border-box;
+        overflow: auto;
+    `;
+
+    function updateCheckboxes(program) {
+        checkboxContainer.innerHTML = '';
+
+        const options = programMappings[program];
+
+        // Najpierw dodanie zwykłych checkboxów
+        Object.entries(options).forEach(([displayName, value]) => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '8px';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = value;
+            checkbox.value = value;
+            checkbox.style.cssText = `
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                accent-color: #ffc107;
+            `;
+
+            const label = document.createElement('label');
+            label.htmlFor = value;
+            label.textContent = displayName;
+            label.style.cssText = `
+                margin-left: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                vertical-align: middle;
+            `;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            checkboxContainer.appendChild(div);
+        });
+
+        // Dodanie separatora
+        const separator = document.createElement('div');
+        separator.style.cssText = `
+            border-top: 1px solid #ddd;
+            margin: 10px 0;
+        `;
+        checkboxContainer.appendChild(separator);
+
+        // Dodanie checkboxa "Select All" na końcu
+        const selectAllDiv = document.createElement('div');
+        selectAllDiv.style.marginTop = '8px';
+
+        const selectAllCheckbox = document.createElement('input');
+        selectAllCheckbox.type = 'checkbox';
+        selectAllCheckbox.id = 'selectAll';
+        selectAllCheckbox.style.cssText = `
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #ffc107;
+        `;
+
+        const selectAllLabel = document.createElement('label');
+        selectAllLabel.htmlFor = 'selectAll';
+        selectAllLabel.textContent = 'Select All';
+        selectAllLabel.style.cssText = `
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            vertical-align: middle;
+        `;
+
+        // Event listener dla Select All
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (checkbox !== selectAllCheckbox) {
+                    checkbox.checked = selectAllCheckbox.checked;
+                }
+            });
+        });
+
+        // Event listener dla pozostałych checkboxów do aktualizacji stanu Select All
+        const updateSelectAll = () => {
+            const checkboxes = Array.from(checkboxContainer.querySelectorAll('input[type="checkbox"]'))
+                .filter(cb => cb !== selectAllCheckbox);
+            const allChecked = checkboxes.every(cb => cb.checked);
+            selectAllCheckbox.checked = allChecked;
+        };
+
+        checkboxContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectAll);
+        });
+
+        selectAllDiv.appendChild(selectAllCheckbox);
+        selectAllDiv.appendChild(selectAllLabel);
+        checkboxContainer.appendChild(selectAllDiv);
+    }
+
+    // Initialize checkboxes with default program (SP)
+    updateCheckboxes(currentProgram);
     outerContainer.appendChild(checkboxContainer);
 
-    // Przyciski (na białym tle)
+    // Button container
     const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.justifyContent = 'space-between';
-
-    // Create copy button
+    buttonContainer.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        height: 40px;
+        box-sizing: border-box;
+        margin-top: auto;
+    `;
+// Create copy button
     const copyButton = document.createElement('button');
     copyButton.textContent = 'Copy to clipboard';
-    copyButton.style.padding = '8px 10px';
-    copyButton.style.width = '73%';
-    copyButton.style.cursor = 'pointer';
-    copyButton.style.fontSize = '14px';
-    copyButton.style.backgroundColor = '#fdda5e';
-    copyButton.style.border = '1px solid #ffc107';
-    copyButton.style.borderRadius = '3px';
-    copyButton.style.color = '#000';
-    copyButton.style.transition = 'all 0.3s';
+    copyButton.style.cssText = `
+        padding: 8px 10px;
+        width: 73%;
+        cursor: pointer;
+        font-size: 14px;
+        background-color: #fdda5e;
+        border: 1px solid #ffc107;
+        border-radius: 3px;
+        color: #000;
+        transition: all 0.3s;
+    `;
 
     copyButton.addEventListener('mouseover', () => {
         copyButton.style.backgroundColor = '#ffc107';
@@ -112,20 +314,21 @@
     });
 
     copyButton.addEventListener('click', function() {
-        const selectedOptions = options.filter(option =>
-            document.getElementById(option).checked
+        const currentOptions = programMappings[currentProgram];
+        const selectedOptions = Object.values(currentOptions).filter(value =>
+            document.getElementById(value)?.checked
         );
 
         if (selectedOptions.length > 0) {
             GM_setClipboard(selectedOptions.join('\n'));
 
-            // Dodajemy efekt zielonego przycisku
+            // Zmiana koloru przycisku po skopiowaniu
             copyButton.textContent = 'Copied!';
             copyButton.style.backgroundColor = '#2e7d32';
             copyButton.style.borderColor = '#1b5e20';
             copyButton.style.color = '#fff';
 
-            // Przywracamy oryginalny wygląd po 2 sekundach
+            // Przywrócenie oryginalnego wyglądu po 2 sekundach
             setTimeout(() => {
                 copyButton.textContent = 'Copy to clipboard';
                 copyButton.style.backgroundColor = '#fdda5e';
@@ -138,15 +341,17 @@
     // Create clear button
     const clearButton = document.createElement('button');
     clearButton.textContent = 'Clear';
-    clearButton.style.padding = '8px 10px';
-    clearButton.style.width = '25%';
-    clearButton.style.cursor = 'pointer';
-    clearButton.style.fontSize = '14px';
-    clearButton.style.backgroundColor = '#4a90e2';
-    clearButton.style.border = '1px solid #357abd';
-    clearButton.style.borderRadius = '3px';
-    clearButton.style.color = '#fff';
-    clearButton.style.transition = 'all 0.3s';
+    clearButton.style.cssText = `
+        padding: 8px 10px;
+        width: 25%;
+        cursor: pointer;
+        font-size: 14px;
+        background-color: #4a90e2;
+        border: 1px solid #357abd;
+        border-radius: 3px;
+        color: #fff;
+        transition: all 0.3s;
+    `;
 
     clearButton.addEventListener('mouseover', () => {
         clearButton.style.backgroundColor = '#357abd';
@@ -157,17 +362,22 @@
     });
 
     clearButton.addEventListener('click', function() {
-        options.forEach(option => {
-            document.getElementById(option).checked = false;
+        const currentOptions = programMappings[currentProgram];
+        Object.values(currentOptions).forEach(value => {
+            const checkbox = document.getElementById(value);
+            if (checkbox) checkbox.checked = false;
         });
+        // Upewnij się, że Select All też jest odznaczony
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+        }
     });
 
     buttonContainer.appendChild(copyButton);
     buttonContainer.appendChild(clearButton);
-
-    // Dodajemy przyciski do białego kontenera
     outerContainer.appendChild(buttonContainer);
 
-    // Dodajemy całość do body
+    // Add container to body
     document.body.appendChild(outerContainer);
 })();
