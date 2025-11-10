@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD Name Generator Global @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.4
 // @description  Generuje nazwy eksperymentów dla AIRD
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update/*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
@@ -12,6 +12,26 @@
 
 (function() {
     'use strict';
+
+    const processMapping = {
+        'SP': 'SPONSORED_PRODUCTS',
+        'SB': 'HSA4V_PRODUCTS',
+        'AD POST': 'AD_POST',
+        'STORES': 'STORES_MODERATION',
+        'BOOKS': 'SPONSORED_BOOKS',
+        'SBV': 'SPONSORED_BRANDS_VIDEO'
+    };
+
+    function updateProcess(adType) {
+        const processSelects = document.querySelectorAll('select');
+        processSelects.forEach(select => {
+            const options = select.options;
+            if (Array.from(options).some(option => option.value === 'SPONSORED_PRODUCTS')) {
+                select.value = processMapping[adType];
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
 
     function getWeekNumber() {
         const now = new Date();
@@ -40,7 +60,31 @@
         return label;
     }
 
-    function saveSelectedRegion(region) {
+    function createDropdown(options, defaultOption) {
+        const select = document.createElement('select');
+        select.style.cssText = `
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: #f0f0f0;
+        `;
+
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option;
+            optionElement.textContent = option;
+            if (option === defaultOption) {
+                optionElement.selected = true;
+            }
+            select.appendChild(optionElement);
+        });
+
+        return select;
+    }
+ function saveSelectedRegion(region) {
         localStorage.setItem('selectedRegion', region);
     }
 
@@ -55,7 +99,8 @@
     function getSelectedMP() {
         return localStorage.getItem('selectedMP') || 'JP';
     }
-function updateKeywordSource(selectedType) {
+
+    function updateKeywordSource(selectedType) {
         const keywordSourceSelects = document.querySelectorAll('select');
         keywordSourceSelects.forEach(select => {
             const label = select.previousElementSibling;
@@ -121,7 +166,7 @@ function updateKeywordSource(selectedType) {
     typeSelect.addEventListener('change', (event) => {
         updateKeywordSource(event.target.value);
     });
-const monthDisplay = document.createElement('div');
+ const monthDisplay = document.createElement('div');
     monthDisplay.textContent = getMonthName();
     monthDisplay.style.cssText = `
         background-color: #f0f0f0;
@@ -210,7 +255,7 @@ const monthDisplay = document.createElement('div');
             marketplaceButtonsContainer.appendChild(button);
         });
     }
- const regionToggle = document.createElement('div');
+    const regionToggle = document.createElement('div');
     regionToggle.style.cssText = `
         display: flex;
         justify-content: space-between;
@@ -218,43 +263,43 @@ const monthDisplay = document.createElement('div');
     `;
 
     const regions = ['EN', 'ROW', 'IXP', 'JP'];
-const savedRegion = getSelectedRegion();
+    const savedRegion = getSelectedRegion();
 
-// Dodajemy style dla radio buttonów
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-    input[type="radio"] {
-        accent-color: #ffc107;
-    }
-`;
-document.head.appendChild(styleSheet);
-
-regions.forEach(region => {
-    const label = document.createElement('label');
-    label.style.cssText = `
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        padding: 5px;
-        font-size: 12px;
+    // Dodajemy style dla radio buttonów
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+        input[type="radio"] {
+            accent-color: #ffc107;
+        }
     `;
+    document.head.appendChild(styleSheet);
 
-    const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = 'region';
-    radio.value = region;
-    radio.style.marginRight = '5px';
-    if (region === savedRegion) radio.checked = true;
+    regions.forEach(region => {
+        const label = document.createElement('label');
+        label.style.cssText = `
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 12px;
+        `;
 
-    radio.addEventListener('change', () => {
-        updateMarketplaceButtons(region);
-        saveSelectedRegion(region);
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'region';
+        radio.value = region;
+        radio.style.marginRight = '5px';
+        if (region === savedRegion) radio.checked = true;
+
+        radio.addEventListener('change', () => {
+            updateMarketplaceButtons(region);
+            saveSelectedRegion(region);
+        });
+
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(region));
+        regionToggle.appendChild(label);
     });
-
-    label.appendChild(radio);
-    label.appendChild(document.createTextNode(region));
-    regionToggle.appendChild(label);
-});
 
     const weekDisplay = document.createElement('div');
     weekDisplay.textContent = 'Wk' + getWeekNumber();
@@ -272,6 +317,15 @@ regions.forEach(region => {
         font-weight: bold;
     `;
 
+    // Dodanie dropdownu dla Ad Type
+    const adTypeOptions = ['SP', 'SB', 'AD POST', 'STORES', 'BOOKS', 'SBV'];
+    const adTypeSelect = createDropdown(adTypeOptions, 'SP');
+
+    // Dodanie event listenera do adTypeSelect
+    adTypeSelect.addEventListener('change', (e) => {
+        updateProcess(e.target.value);
+    });
+
     const rulenameInput = document.createElement('input');
     rulenameInput.type = 'text';
     rulenameInput.placeholder = 'Enter rule name';
@@ -283,8 +337,7 @@ regions.forEach(region => {
         border-radius: 3px;
         margin-bottom: 10px;
     `;
-
-    const generateButton = document.createElement('button');
+   const generateButton = document.createElement('button');
     generateButton.textContent = 'Generate Name';
     generateButton.style.cssText = `
         padding: 5px 10px;
@@ -299,7 +352,7 @@ regions.forEach(region => {
         margin-bottom: 10px;
     `;
 
-const previewDiv = document.createElement('div');
+    const previewDiv = document.createElement('div');
     previewDiv.style.cssText = `
         padding: 5px;
         border: 1px solid #ddd;
@@ -322,13 +375,14 @@ const previewDiv = document.createElement('div');
         const month = getMonthName();
         const week = 'Wk' + getWeekNumber();
         const rulename = rulenameInput.value.trim();
+        const adType = adTypeSelect.value;
 
         if (!rulename) {
             alert('Please enter a rule name!');
             return;
         }
 
-        const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_SP`;
+        const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_${adType}`;
         previewDiv.textContent = generatedName;
 
         // Kopiowanie do schowka
@@ -360,6 +414,9 @@ const previewDiv = document.createElement('div');
     // Inicjalizacja początkowej listy marketplace'ów
     updateMarketplaceButtons(savedRegion);
 
+    // Inicjalizacja procesu przy starcie
+    updateProcess('SP');
+
     container.appendChild(createLabel('Type:'));
     container.appendChild(typeSelect);
     container.appendChild(createLabel('Month:'));
@@ -370,6 +427,8 @@ const previewDiv = document.createElement('div');
     container.appendChild(marketplaceButtonsContainer);
     container.appendChild(createLabel('Week:'));
     container.appendChild(weekDisplay);
+    container.appendChild(createLabel('Ad Programe:'));
+    container.appendChild(adTypeSelect);
     container.appendChild(createLabel('Rule Name:'));
     container.appendChild(rulenameInput);
     container.appendChild(generateButton);
