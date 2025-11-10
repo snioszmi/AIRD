@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Tworzy checkboxy z opcjami Ad Components
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
 // @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
@@ -98,7 +98,7 @@
         z-index: 9999;
         width: 280px;
         box-sizing: border-box;
-        height: 500px;  // Stała wysokość całego kontenera
+        height: 530px;  // Stała wysokość całego kontenera
     `;
 
     // Add title
@@ -127,7 +127,7 @@
         padding: 5px;
         border-radius: 3px;
         border: 1px solid #ddd;
-        height: 130px;
+        height: 140px;
         box-sizing: border-box;
     `;
 
@@ -177,7 +177,7 @@
         border-radius: 3px;
         margin-bottom: 10px;
         border: 1px solid #ddd;
-        height: 300px;
+        height: 320px;
         box-sizing: border-box;
         overflow: auto;
     `;
