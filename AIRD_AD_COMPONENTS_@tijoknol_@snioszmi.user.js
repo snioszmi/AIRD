@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
 // @namespace    tampermonkey.net/
-// @version      2.0
+// @version      1.5
 // @description  Tworzy checkboxy z opcjami Ad Components
 // @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
 // @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
@@ -79,11 +79,10 @@
         }
     };
 
-    // Create outer container
     const outerContainer = document.createElement('div');
     outerContainer.style.cssText = `
         position: fixed;
-        bottom: 40px;
+        bottom: 60px;
         left: 10px;
         padding: 0;
         background-color: #fff;
@@ -94,7 +93,6 @@
         box-sizing: border-box;
     `;
 
-    // Header z przyciskiem minimalizacji
     const header = document.createElement('div');
     header.style.cssText = `
         display: flex;
@@ -135,7 +133,6 @@
     header.appendChild(headerTitle);
     header.appendChild(toggleButton);
 
-    // Content container
     const contentContainer = document.createElement('div');
     contentContainer.style.cssText = `
         padding: 10px;
@@ -144,7 +141,7 @@
 
     let isMinimized = false;
 
-    toggleButton.addEventListener('click', (e) => {
+    toggleButton.addEventListener('click', function(e) {
         e.stopPropagation();
         isMinimized = !isMinimized;
 
@@ -159,16 +156,15 @@
         }
     });
 
-    toggleButton.addEventListener('mouseover', () => {
+    toggleButton.addEventListener('mouseover', function() {
         toggleButton.style.backgroundColor = 'rgba(0,0,0,0.1)';
         toggleButton.style.borderRadius = '3px';
     });
 
-    toggleButton.addEventListener('mouseout', () => {
+    toggleButton.addEventListener('mouseout', function() {
         toggleButton.style.backgroundColor = 'transparent';
     });
 
-    // Add title
     const title = document.createElement('div');
     title.textContent = 'Ad Program:';
     title.style.cssText = `
@@ -181,7 +177,6 @@
     `;
     contentContainer.appendChild(title);
 
-    // Program selector container
     const programSelector = document.createElement('div');
     programSelector.style.cssText = `
         display: grid;
@@ -196,8 +191,7 @@
 
     let currentProgram = 'SP';
 
-    // Tworzenie pill buttons dla programów
-    Object.keys(programMappings).forEach(program => {
+    Object.keys(programMappings).forEach(function(program) {
         const button = document.createElement('button');
         button.textContent = program;
         button.style.cssText = `
@@ -206,15 +200,15 @@
             border: 1px solid #ccc;
             border-radius: 3px;
             cursor: pointer;
-            background-color: ${program === 'SP' ? '#fdda5e' : '#fff'};
-            border-color: ${program === 'SP' ? '#ffc107' : '#ccc'};
+            background-color: ` + (program === 'SP' ? '#fdda5e' : '#fff') + `;
+            border-color: ` + (program === 'SP' ? '#ffc107' : '#ccc') + `;
             transition: all 0.2s;
             width: 100%;
             text-align: center;
         `;
 
-        button.addEventListener('click', () => {
-            programSelector.querySelectorAll('button').forEach(btn => {
+        button.addEventListener('click', function() {
+            programSelector.querySelectorAll('button').forEach(function(btn) {
                 btn.style.backgroundColor = '#fff';
                 btn.style.borderColor = '#ccc';
             });
@@ -231,7 +225,6 @@
 
     contentContainer.appendChild(programSelector);
 
-    // Create checkbox container
     const checkboxContainer = document.createElement('div');
     checkboxContainer.style.cssText = `
         background-color: #f0f0f0;
@@ -249,7 +242,10 @@
 
         const options = programMappings[program];
 
-        Object.entries(options).forEach(([displayName, value]) => {
+        Object.entries(options).forEach(function(entry) {
+            const displayName = entry[0];
+            const value = entry[1];
+
             const div = document.createElement('div');
             div.style.marginBottom = '8px';
 
@@ -310,23 +306,23 @@
             vertical-align: middle;
         `;
 
-        selectAllCheckbox.addEventListener('change', (e) => {
+        selectAllCheckbox.addEventListener('change', function(e) {
             const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
+            checkboxes.forEach(function(checkbox) {
                 if (checkbox !== selectAllCheckbox) {
                     checkbox.checked = selectAllCheckbox.checked;
                 }
             });
         });
 
-        const updateSelectAll = () => {
+        const updateSelectAll = function() {
             const checkboxes = Array.from(checkboxContainer.querySelectorAll('input[type="checkbox"]'))
-                .filter(cb => cb !== selectAllCheckbox);
-            const allChecked = checkboxes.every(cb => cb.checked);
+                .filter(function(cb) { return cb !== selectAllCheckbox; });
+            const allChecked = checkboxes.every(function(cb) { return cb.checked; });
             selectAllCheckbox.checked = allChecked;
         };
 
-        checkboxContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkboxContainer.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
             checkbox.addEventListener('change', updateSelectAll);
         });
 
@@ -338,7 +334,6 @@
     updateCheckboxes(currentProgram);
     contentContainer.appendChild(checkboxContainer);
 
-    // Button container
     const buttonContainer = document.createElement('div');
     buttonContainer.style.cssText = `
         display: flex;
@@ -359,29 +354,30 @@
         transition: all 0.3s;
     `;
 
-    copyButton.addEventListener('mouseover', () => {
+    copyButton.addEventListener('mouseover', function() {
         copyButton.style.backgroundColor = '#ffc107';
     });
 
-    copyButton.addEventListener('mouseout', () => {
+    copyButton.addEventListener('mouseout', function() {
         copyButton.style.backgroundColor = '#fdda5e';
     });
 
-  copyButton.addEventListener('click', function() {
-    const currentOptions = programMappings[currentProgram];
-    const selectedOptions = Object.values(currentOptions).filter(value =>
-        document.getElementById(value)?.checked
-    );
+    copyButton.addEventListener('click', function() {
+        const currentOptions = programMappings[currentProgram];
+        const selectedOptions = Object.values(currentOptions).filter(function(value) {
+            const checkbox = document.getElementById(value);
+            return checkbox && checkbox.checked;
+        });
 
-    if (selectedOptions.length > 0) {
-        GM_setClipboard(selectedOptions.join());
+        if (selectedOptions.length > 0) {
+            GM_setClipboard(selectedOptions.join('\n'));
 
             copyButton.textContent = 'Copied!';
             copyButton.style.backgroundColor = '#2e7d32';
             copyButton.style.borderColor = '#1b5e20';
             copyButton.style.color = '#fff';
 
-            setTimeout(() => {
+            setTimeout(function() {
                 copyButton.textContent = 'Copy to clipboard';
                 copyButton.style.backgroundColor = '#fdda5e';
                 copyButton.style.borderColor = '#ffc107';
@@ -404,17 +400,17 @@
         transition: all 0.3s;
     `;
 
-    clearButton.addEventListener('mouseover', () => {
+    clearButton.addEventListener('mouseover', function() {
         clearButton.style.backgroundColor = '#357abd';
     });
 
-    clearButton.addEventListener('mouseout', () => {
+    clearButton.addEventListener('mouseout', function() {
         clearButton.style.backgroundColor = '#4a90e2';
     });
 
     clearButton.addEventListener('click', function() {
         const currentOptions = programMappings[currentProgram];
-        Object.values(currentOptions).forEach(value => {
+        Object.values(currentOptions).forEach(function(value) {
             const checkbox = document.getElementById(value);
             if (checkbox) checkbox.checked = false;
         });
