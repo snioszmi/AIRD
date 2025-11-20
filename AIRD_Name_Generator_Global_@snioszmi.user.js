@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         AIRD Name Generator Global @snioszmi
-// @namespace    http://tampermonkey.net/
-// @version      1.4
+// @namespace    tampermonkey.net/
+// @version      2.0
 // @description  Generuje nazwy eksperymentów dla AIRD
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update/*
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/keyword-management/create*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/update/*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/keyword-management/create*
 // @author       Michał Śnioszek
 // @grant        none
 // ==/UserScript==
@@ -84,7 +84,8 @@
 
         return select;
     }
- function saveSelectedRegion(region) {
+
+    function saveSelectedRegion(region) {
         localStorage.setItem('selectedRegion', region);
     }
 
@@ -130,6 +131,17 @@
         });
     }
 
+    function updateMarketplace(newMP) {
+        const marketplaceSelects = document.querySelectorAll('select');
+        marketplaceSelects.forEach(select => {
+            const label = select.previousElementSibling;
+            if (label && label.textContent === 'Marketplace') {
+                select.value = newMP;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
     const container = document.createElement('div');
     container.style.cssText = `
         position: absolute;
@@ -138,11 +150,84 @@
         background-color: #fff;
         border: 1px solid #ddd;
         border-radius: 5px;
-        padding: 10px;
+        padding: 0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         width: 300px;
         z-index: 9999;
     `;
+
+    const header = document.createElement('div');
+    header.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: #fdda5e;
+        border-bottom: 1px solid #ffc107;
+        border-radius: 5px 5px 0 0;
+        cursor: move;
+    `;
+
+    const headerTitle = document.createElement('span');
+    headerTitle.textContent = 'AIRD Name Generator';
+    headerTitle.style.cssText = `
+        font-weight: bold;
+        font-size: 14px;
+        color: #333;
+    `;
+
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = '−';
+    toggleButton.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #333;
+        padding: 0;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    `;
+
+    header.appendChild(headerTitle);
+    header.appendChild(toggleButton);
+
+    const contentContainer = document.createElement('div');
+    contentContainer.style.cssText = `
+        padding: 10px;
+        display: block;
+    `;
+
+    let isMinimized = false;
+
+    toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isMinimized = !isMinimized;
+
+        if (isMinimized) {
+            contentContainer.style.display = 'none';
+            toggleButton.textContent = '+';
+            container.style.width = '200px';
+        } else {
+            contentContainer.style.display = 'block';
+            toggleButton.textContent = '−';
+            container.style.width = '300px';
+        }
+    });
+
+    toggleButton.addEventListener('mouseover', () => {
+        toggleButton.style.backgroundColor = 'rgba(0,0,0,0.1)';
+        toggleButton.style.borderRadius = '3px';
+    });
+
+    toggleButton.addEventListener('mouseout', () => {
+        toggleButton.style.backgroundColor = 'transparent';
+    });
 
     const typeSelect = document.createElement('select');
     typeSelect.style.cssText = `
@@ -166,7 +251,8 @@
     typeSelect.addEventListener('change', (event) => {
         updateKeywordSource(event.target.value);
     });
- const monthDisplay = document.createElement('div');
+
+    const monthDisplay = document.createElement('div');
     monthDisplay.textContent = getMonthName();
     monthDisplay.style.cssText = `
         background-color: #f0f0f0;
@@ -191,17 +277,6 @@
 
     let selectedMP = getSelectedMP();
 
-    function updateMarketplace(newMP) {
-        const marketplaceSelects = document.querySelectorAll('select');
-        marketplaceSelects.forEach(select => {
-            const label = select.previousElementSibling;
-            if (label && label.textContent === 'Marketplace') {
-                select.value = newMP;
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    }
-
     const marketplaceButtonsContainer = document.createElement('div');
     marketplaceButtonsContainer.style.cssText = `
         display: grid;
@@ -214,9 +289,8 @@
         marketplaceButtonsContainer.innerHTML = '';
         const mps = marketplacesByRegion[region];
 
-        // Sprawdź czy zapamiętany MP jest w bieżącym regionie
         if (!mps.includes(selectedMP)) {
-            selectedMP = mps[0];
+            selectedMP = mps;
             saveSelectedMP(selectedMP);
         }
 
@@ -255,6 +329,7 @@
             marketplaceButtonsContainer.appendChild(button);
         });
     }
+
     const regionToggle = document.createElement('div');
     regionToggle.style.cssText = `
         display: flex;
@@ -265,7 +340,6 @@
     const regions = ['EN', 'ROW', 'IXP', 'JP'];
     const savedRegion = getSelectedRegion();
 
-    // Dodajemy style dla radio buttonów
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
         input[type="radio"] {
@@ -317,11 +391,9 @@
         font-weight: bold;
     `;
 
-    // Dodanie dropdownu dla Ad Type
     const adTypeOptions = ['SP', 'SB', 'AD POST', 'STORES', 'BOOKS', 'SBV'];
     const adTypeSelect = createDropdown(adTypeOptions, 'SP');
 
-    // Dodanie event listenera do adTypeSelect
     adTypeSelect.addEventListener('change', (e) => {
         updateProcess(e.target.value);
     });
@@ -337,7 +409,8 @@
         border-radius: 3px;
         margin-bottom: 10px;
     `;
-   const generateButton = document.createElement('button');
+
+    const generateButton = document.createElement('button');
     generateButton.textContent = 'Generate Name';
     generateButton.style.cssText = `
         padding: 5px 10px;
@@ -382,18 +455,70 @@
             return;
         }
 
-        const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_${adType}`;
+        const selectedRegion = document.querySelector('input[name="region"]:checked').value;
+
+        let finalAdType = adType;
+        if ((selectedRegion === 'EN' || selectedRegion === 'ROW') && adType === 'SP') {
+            finalAdType = 'M2';
+        }
+
+        const generatedName = `${type}_${month}_${week}_${selectedMP}_${rulename}_${finalAdType}`;
         previewDiv.textContent = generatedName;
 
-        // Kopiowanie do schowka
         navigator.clipboard.writeText(generatedName);
 
-        // Zmiana tekstu i koloru przycisku
+        // NOWE: Aktualizacja pola Marketplace na stronie
+        updateMarketplace(selectedMP);
+
+        // Obsługa pól tekstowych (type="text")
+        const textInputs = document.querySelectorAll('input[type="text"]');
+        textInputs.forEach(input => {
+            const label = input.previousElementSibling;
+            if (label) {
+                const labelText = label.textContent;
+
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLInputElement.prototype,
+                    'value'
+                ).set;
+
+                if (labelText === 'Experiment Name') {
+                    nativeInputValueSetter.call(input, generatedName);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('blur', { bubbles: true }));
+                }
+
+                if (labelText === 'Rule Name') {
+                    nativeInputValueSetter.call(input, generatedName);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    input.dispatchEvent(new Event('blur', { bubbles: true }));
+                }
+            }
+        });
+
+        // Obsługa pól numerycznych (type="number")
+        const numberInputs = document.querySelectorAll('input[type="number"]');
+        numberInputs.forEach(input => {
+            const label = input.previousElementSibling;
+            if (label && label.textContent === 'Source Keyword Count') {
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLInputElement.prototype,
+                    'value'
+                ).set;
+
+                nativeInputValueSetter.call(input, '1');
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+        });
+
         generateButton.textContent = 'Copied to clipboard!';
         generateButton.style.backgroundColor = '#2e7d32';
         generateButton.style.borderColor = '#1b5e20';
 
-        // Przywrócenie oryginalnego wyglądu po 2 sekundach
         setTimeout(() => {
             generateButton.textContent = 'Generate Name';
             generateButton.style.backgroundColor = '#fdda5e';
@@ -411,29 +536,28 @@
 
     generateButton.addEventListener('click', generateName);
 
-    // Inicjalizacja początkowej listy marketplace'ów
     updateMarketplaceButtons(savedRegion);
-
-    // Inicjalizacja procesu przy starcie
     updateProcess('SP');
 
-    container.appendChild(createLabel('Type:'));
-    container.appendChild(typeSelect);
-    container.appendChild(createLabel('Month:'));
-    container.appendChild(monthDisplay);
-    container.appendChild(createLabel('Region:'));
-    container.appendChild(regionToggle);
-    container.appendChild(createLabel('Marketplace:'));
-    container.appendChild(marketplaceButtonsContainer);
-    container.appendChild(createLabel('Week:'));
-    container.appendChild(weekDisplay);
-    container.appendChild(createLabel('Ad Programe:'));
-    container.appendChild(adTypeSelect);
-    container.appendChild(createLabel('Rule Name:'));
-    container.appendChild(rulenameInput);
-    container.appendChild(generateButton);
-    container.appendChild(previewDiv);
+    contentContainer.appendChild(createLabel('Type:'));
+    contentContainer.appendChild(typeSelect);
+    contentContainer.appendChild(createLabel('Month:'));
+    contentContainer.appendChild(monthDisplay);
+    contentContainer.appendChild(createLabel('Region:'));
+    contentContainer.appendChild(regionToggle);
+    contentContainer.appendChild(createLabel('Marketplace:'));
+    contentContainer.appendChild(marketplaceButtonsContainer);
+    contentContainer.appendChild(createLabel('Week:'));
+    contentContainer.appendChild(weekDisplay);
+    contentContainer.appendChild(createLabel('Ad Programe:'));
+    contentContainer.appendChild(adTypeSelect);
+    contentContainer.appendChild(createLabel('Rule Name:'));
+    contentContainer.appendChild(rulenameInput);
+    contentContainer.appendChild(generateButton);
+    contentContainer.appendChild(previewDiv);
 
+    container.appendChild(header);
+    container.appendChild(contentContainer);
     document.body.appendChild(container);
 
     let isDragging = false;
@@ -442,8 +566,8 @@
     let initialX;
     let initialY;
 
-    container.addEventListener('mousedown', e => {
-        if (e.target === container) {
+    header.addEventListener('mousedown', e => {
+        if (e.target === header || e.target === headerTitle) {
             isDragging = true;
             initialX = e.clientX - container.offsetLeft;
             initialY = e.clientY - container.offsetTop;
@@ -457,6 +581,7 @@
             currentY = e.clientY - initialY;
             container.style.left = currentX + 'px';
             container.style.top = currentY + 'px';
+            container.style.right = 'auto';
         }
     });
 
