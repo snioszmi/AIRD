@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
 // @namespace    tampermonkey.net/
-// @version      1.5
+// @version      2.0
 // @description  Tworzy checkboxy z opcjami Ad Components
 // @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
 // @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
