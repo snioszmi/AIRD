@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         AIRD AD COMPONENTS @tijoknol @snioszmi
-// @namespace    http://tampermonkey.net/
-// @version      1.4
+// @namespace    tampermonkey.net/
+// @version      2.0
 // @description  Tworzy checkboxy z opcjami Ad Components
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
-// @match        https://content-risk-engine-iad.iad.proxy.amazon.com/keyword-management/create*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/update*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/experiments/create*
+// @match        content-risk-engine-iad.iad.proxy.amazon.com/keyword-management/create*
 // @author      Tijo Knol,  Michał Śnioszek
 // @grant        GM_setClipboard
 // ==/UserScript==
@@ -15,7 +15,6 @@
 
     const programMappings = {
         'SP': {
-            
             'Product Description': 'asinAssetsProductDescription',
             'Feature Bullets': 'asinAssetsFeatureBullets',
             'ASIN Brand': 'asinAssetsBrand',
@@ -23,7 +22,6 @@
             'Browse Nodes': 'asinAssetsBrowseNodes',
             'OCR Text': 'imageText',
             'Product Title': 'asinAssetsProductTitle'
-            
         },
         'SB': {
             'Product Title': 'asinAssetsProductTitle',
@@ -38,8 +36,6 @@
             'Landing Page Asin Browse Nodes': 'landingPageAsinBrowseNodes',
             'Landing Page Asin Brands': 'landingPageAsinBrands'
         },
-        
-       
         'AD POST': {
             'Product Title': 'asinAssetsProductTitle',
             'OCR Text': 'imageText',
@@ -47,7 +43,6 @@
             'Feature Bullets': 'asinAssetsFeatureBullets',
             'Brand': 'asinAssetsBrand',
             'Caption': 'textAssets$caption'
-            
         },
         'STORES': {
             'Product Title': 'asinAssetsProductTitle',
@@ -62,7 +57,7 @@
             'Book Title': 'bookTitle',
             'AuthorNames': 'asinAssetsAuthorNames',
             'OCR Text': 'imageText',
-            'Custom Headline': 'textAssets$customHeadline', 
+            'Custom Headline': 'textAssets$customHeadline',
             'Product Title': 'asinAssetsProductTitle',
             'Product Description': 'asinAssetsProductDescription',
             'Feature Bullets': 'asinAssetsFeatureBullets',
@@ -74,8 +69,6 @@
             'Landing Page Asin Brands': 'landingPageAsinBrands',
             'All Text': 'textAssets'
         },
-  
-    
         'SBV': {
             'Product Title': 'asinAssetsProductTitle',
             'Product Description': 'asinAssetsProductDescription',
@@ -85,21 +78,95 @@
             'Browse Nodes': 'asinAssetsBrowseNodes'
         }
     };
- // Create outer container (biały)
+
+    // Create outer container
     const outerContainer = document.createElement('div');
     outerContainer.style.cssText = `
         position: fixed;
-        bottom: 60px;
+        bottom: 40px;
         left: 10px;
-        padding: 10px;
+        padding: 0;
         background-color: #fff;
         border: 1px solid #ddd;
         border-radius: 5px;
         z-index: 9999;
         width: 280px;
         box-sizing: border-box;
-        height: 530px;  // Stała wysokość całego kontenera
     `;
+
+    // Header z przyciskiem minimalizacji
+    const header = document.createElement('div');
+    header.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: #fdda5e;
+        border-bottom: 1px solid #ffc107;
+        border-radius: 5px 5px 0 0;
+    `;
+
+    const headerTitle = document.createElement('span');
+    headerTitle.textContent = 'AIRD AD Components';
+    headerTitle.style.cssText = `
+        font-weight: bold;
+        font-size: 14px;
+        color: #333;
+    `;
+
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = '−';
+    toggleButton.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #333;
+        padding: 0;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    `;
+
+    header.appendChild(headerTitle);
+    header.appendChild(toggleButton);
+
+    // Content container
+    const contentContainer = document.createElement('div');
+    contentContainer.style.cssText = `
+        padding: 10px;
+        display: block;
+    `;
+
+    let isMinimized = false;
+
+    toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isMinimized = !isMinimized;
+
+        if (isMinimized) {
+            contentContainer.style.display = 'none';
+            toggleButton.textContent = '+';
+            outerContainer.style.width = '200px';
+        } else {
+            contentContainer.style.display = 'block';
+            toggleButton.textContent = '−';
+            outerContainer.style.width = '280px';
+        }
+    });
+
+    toggleButton.addEventListener('mouseover', () => {
+        toggleButton.style.backgroundColor = 'rgba(0,0,0,0.1)';
+        toggleButton.style.borderRadius = '3px';
+    });
+
+    toggleButton.addEventListener('mouseout', () => {
+        toggleButton.style.backgroundColor = 'transparent';
+    });
 
     // Add title
     const title = document.createElement('div');
@@ -111,10 +178,8 @@
         margin-bottom: 10px;
         padding-bottom: 5px;
         border-bottom: 1px solid #ddd;
-        height: 25px;
-        box-sizing: border-box;
     `;
-    outerContainer.appendChild(title);
+    contentContainer.appendChild(title);
 
     // Program selector container
     const programSelector = document.createElement('div');
@@ -127,8 +192,6 @@
         padding: 5px;
         border-radius: 3px;
         border: 1px solid #ddd;
-        height: 140px;
-        box-sizing: border-box;
     `;
 
     let currentProgram = 'SP';
@@ -151,13 +214,11 @@
         `;
 
         button.addEventListener('click', () => {
-            // Reset all buttons
             programSelector.querySelectorAll('button').forEach(btn => {
                 btn.style.backgroundColor = '#fff';
                 btn.style.borderColor = '#ccc';
             });
 
-            // Highlight selected button
             button.style.backgroundColor = '#fdda5e';
             button.style.borderColor = '#ffc107';
 
@@ -168,8 +229,9 @@
         programSelector.appendChild(button);
     });
 
-    outerContainer.appendChild(programSelector);
- // Create checkbox container
+    contentContainer.appendChild(programSelector);
+
+    // Create checkbox container
     const checkboxContainer = document.createElement('div');
     checkboxContainer.style.cssText = `
         background-color: #f0f0f0;
@@ -187,7 +249,6 @@
 
         const options = programMappings[program];
 
-        // Najpierw dodanie zwykłych checkboxów
         Object.entries(options).forEach(([displayName, value]) => {
             const div = document.createElement('div');
             div.style.marginBottom = '8px';
@@ -218,7 +279,6 @@
             checkboxContainer.appendChild(div);
         });
 
-        // Dodanie separatora
         const separator = document.createElement('div');
         separator.style.cssText = `
             border-top: 1px solid #ddd;
@@ -226,7 +286,6 @@
         `;
         checkboxContainer.appendChild(separator);
 
-        // Dodanie checkboxa "Select All" na końcu
         const selectAllDiv = document.createElement('div');
         selectAllDiv.style.marginTop = '8px';
 
@@ -251,7 +310,6 @@
             vertical-align: middle;
         `;
 
-        // Event listener dla Select All
         selectAllCheckbox.addEventListener('change', (e) => {
             const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
@@ -261,7 +319,6 @@
             });
         });
 
-        // Event listener dla pozostałych checkboxów do aktualizacji stanu Select All
         const updateSelectAll = () => {
             const checkboxes = Array.from(checkboxContainer.querySelectorAll('input[type="checkbox"]'))
                 .filter(cb => cb !== selectAllCheckbox);
@@ -278,20 +335,16 @@
         checkboxContainer.appendChild(selectAllDiv);
     }
 
-    // Initialize checkboxes with default program (SP)
     updateCheckboxes(currentProgram);
-    outerContainer.appendChild(checkboxContainer);
+    contentContainer.appendChild(checkboxContainer);
 
     // Button container
     const buttonContainer = document.createElement('div');
     buttonContainer.style.cssText = `
         display: flex;
         justify-content: space-between;
-        height: 40px;
-        box-sizing: border-box;
-        margin-top: auto;
     `;
-// Create copy button
+
     const copyButton = document.createElement('button');
     copyButton.textContent = 'Copy to clipboard';
     copyButton.style.cssText = `
@@ -314,22 +367,20 @@
         copyButton.style.backgroundColor = '#fdda5e';
     });
 
-    copyButton.addEventListener('click', function() {
-        const currentOptions = programMappings[currentProgram];
-        const selectedOptions = Object.values(currentOptions).filter(value =>
-            document.getElementById(value)?.checked
-        );
+  copyButton.addEventListener('click', function() {
+    const currentOptions = programMappings[currentProgram];
+    const selectedOptions = Object.values(currentOptions).filter(value =>
+        document.getElementById(value)?.checked
+    );
 
-        if (selectedOptions.length > 0) {
-            GM_setClipboard(selectedOptions.join('\n'));
+    if (selectedOptions.length > 0) {
+        GM_setClipboard(selectedOptions.join());
 
-            // Zmiana koloru przycisku po skopiowaniu
             copyButton.textContent = 'Copied!';
             copyButton.style.backgroundColor = '#2e7d32';
             copyButton.style.borderColor = '#1b5e20';
             copyButton.style.color = '#fff';
 
-            // Przywrócenie oryginalnego wyglądu po 2 sekundach
             setTimeout(() => {
                 copyButton.textContent = 'Copy to clipboard';
                 copyButton.style.backgroundColor = '#fdda5e';
@@ -339,7 +390,6 @@
         }
     });
 
-    // Create clear button
     const clearButton = document.createElement('button');
     clearButton.textContent = 'Clear';
     clearButton.style.cssText = `
@@ -368,7 +418,6 @@
             const checkbox = document.getElementById(value);
             if (checkbox) checkbox.checked = false;
         });
-        // Upewnij się, że Select All też jest odznaczony
         const selectAllCheckbox = document.getElementById('selectAll');
         if (selectAllCheckbox) {
             selectAllCheckbox.checked = false;
@@ -377,8 +426,9 @@
 
     buttonContainer.appendChild(copyButton);
     buttonContainer.appendChild(clearButton);
-    outerContainer.appendChild(buttonContainer);
+    contentContainer.appendChild(buttonContainer);
 
-    // Add container to body
+    outerContainer.appendChild(header);
+    outerContainer.appendChild(contentContainer);
     document.body.appendChild(outerContainer);
 })();
